@@ -122,4 +122,19 @@ describe('digest routes on a temp runs dir', () => {
     expect(body.rows.map((r) => r.job)).toEqual(['a/first', 'm/second', 'z/last']);
     expect(pageJobs(await page.text())).toEqual(body.rows.map((r) => r.job));
   });
+
+  it('marks a job that failed and then recovered, and the JSON carries the fail count', async () => {
+    const line = (at: string, status: string) =>
+      `{"at":"${at}","job":"a/flaky","status":"${status}","owner":"rook","error":"boom"}`;
+    writeFileSync(
+      join(dir, '2026-06-06.jsonl'),
+      [line('2026-06-06T01:00:00+01:00', 'fail'), line('2026-06-06T02:00:00+01:00', 'ok')].join('\n'),
+    );
+    const { page, json } = await both(dir, '2026-06-06');
+    const body = (await json.json()) as { rows: { fails: number; lastStatus: string }[] };
+    expect(body.rows).toMatchObject([{ fails: 1, lastStatus: 'ok' }]);
+    const html = await page.text();
+    expect(html).toContain('<tr class="warn">');
+    expect(html).toContain('ok (1 fail)');
+  });
 });
