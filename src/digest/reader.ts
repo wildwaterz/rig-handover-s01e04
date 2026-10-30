@@ -42,6 +42,7 @@ export function foldRows(lines: readonly RunLine[]): DigestRow[] {
         owner: l.owner,
         runs: 1,
         retries: l.status === 'retry' ? 1 : 0,
+        fails: l.status === 'fail' ? 1 : 0,
         lastStatus: l.status,
         lastError: l.error ?? null,
         firstAt: l.at,
@@ -51,6 +52,7 @@ export function foldRows(lines: readonly RunLine[]): DigestRow[] {
     }
     row.runs += 1;
     if (l.status === 'retry') row.retries += 1;
+    if (l.status === 'fail') row.fails += 1;
     row.lastStatus = l.status;
     row.lastAt = l.at;
     if (l.owner !== null) row.owner = l.owner;

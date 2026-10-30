@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { parseLine, readNight } from '../src/digest/reader.js';
+import { parseLine, readNight, readNightText } from '../src/digest/reader.js';
 
 describe('readNight on runs/2026-10-28.jsonl', () => {
   const night = readNight('runs', '2026-10-28');
@@ -27,6 +27,7 @@ describe('readNight on runs/2026-10-28.jsonl', () => {
       owner: 'rook',
       runs: 4,
       retries: 3,
+      fails: 0,
       lastStatus: 'ok',
       lastError: 'upstream 503',
       firstAt: '2026-10-29T01:30:00+01:00',
@@ -89,6 +90,7 @@ describe('readNight edge cases', () => {
         owner: 'rook',
         runs: 2,
         retries: 0,
+        fails: 0,
         lastStatus: 'ok',
         lastError: null,
         firstAt: '2026-03-03T23:00:00+01:00',
@@ -99,12 +101,23 @@ describe('readNight edge cases', () => {
         owner: null,
         runs: 1,
         retries: 0,
+        fails: 1,
         lastStatus: 'fail',
         lastError: 'boom',
         firstAt: '2026-03-04T01:00:00+01:00',
         lastAt: '2026-03-04T01:00:00+01:00',
       },
     ]);
+  });
+});
+
+describe('fails', () => {
+  it('counts fail lines even when the job recovered, and lastStatus stays the last line', () => {
+    const text = [
+      '{"at":"2026-03-03T23:00:00+01:00","job":"a","status":"fail","owner":"rook","error":"boom"}',
+      '{"at":"2026-03-04T00:00:00+01:00","job":"a","status":"ok","owner":"rook"}',
+    ].join('\n');
+    expect(readNightText('2026-03-03', text).rows).toMatchObject([{ job: 'a', fails: 1, lastStatus: 'ok', lastError: 'boom' }]);
   });
 });
 
