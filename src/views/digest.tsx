@@ -5,7 +5,7 @@ export const RETRY_FLAG = 3;
 
 // Times are shown as written in the log, offset included; never converted.
 function Row({ row }: { row: DigestRow }) {
-  const failed = row.lastStatus === 'fail';
+  const failed = row.fails > 0; // any fail line, even if the job recovered
   const retried = row.retries >= RETRY_FLAG;
   return (
     <tr class={failed ? 'warn' : undefined}>
@@ -13,7 +13,7 @@ function Row({ row }: { row: DigestRow }) {
       <td>{row.owner ?? '—'}</td>
       <td>{row.runs}</td>
       <td class={retried ? 'warn' : undefined}>{retried ? `${row.retries} (many retries)` : row.retries}</td>
-      <td>{failed ? 'FAIL' : row.lastStatus}</td>
+      <td>{row.lastStatus === 'fail' ? 'FAIL' : failed ? `${row.lastStatus} (${row.fails} fail)` : row.lastStatus}</td>
       <td>{row.lastError ?? '—'}</td>
       <td>{row.firstAt}</td>
       <td>{row.lastAt}</td>
